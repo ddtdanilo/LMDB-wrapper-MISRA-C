@@ -1,0 +1,108 @@
+# LMDB Wrapper - MISRA C
+
+> MISRA C compliant wrapper for LMDB (Lightning Memory-Mapped Database)
+
+## Overview
+
+A C99 library that provides a safe, validated API layer over LMDB enforcing MISRA C coding standards. Designed for safety-critical and embedded systems that need reliable key-value storage with strict error handling.
+
+## Key Facts
+
+- Language: C (C99 standard)
+- License: MIT
+- Build system: CMake >= 3.14
+- Dependencies: LMDB (auto-downloaded by CMake)
+- Testing: CMocka framework
+- MISRA C compliant: full parameter validation, explicit error codes, single return point per function
+
+## API
+
+The public API is declared in `include/lmdb_wrapper.h`. All functions use the `lmdbWrapper` prefix.
+
+### Types
+
+- `lmdbWrapperErr_t` — Error code enum returned by all functions
+- `lmdbWrapperEnv_t` — Opaque environment handle
+- `lmdbWrapperConfig_t` — Configuration struct with fields: `path` (const char*), `mapSize` (size_t), `maxDbs` (uint32_t)
+
+### Functions
+
+- `lmdbWrapperEnvCreate(lmdbWrapperEnv_t **envOut, const lmdbWrapperConfig_t *config)` — Create and open a database environment
+- `lmdbWrapperEnvClose(lmdbWrapperEnv_t *env)` — Close and destroy an environment
+- `lmdbWrapperPut(lmdbWrapperEnv_t *env, const void *key, size_t keySize, const void *val, size_t valSize)` — Store a key-value record
+- `lmdbWrapperGet(lmdbWrapperEnv_t *env, const void *key, size_t keySize, void **valOut, size_t *valSizeOut)` — Retrieve a value by key
+- `lmdbWrapperDel(lmdbWrapperEnv_t *env, const void *key, size_t keySize)` — Delete a record by key
+- `lmdbWrapperStrerror(lmdbWrapperErr_t err)` — Convert error code to human-readable string
+
+### Error Codes
+
+- `LMDB_WRAPPER_SUCCESS` (0) — Operation succeeded
+- `LMDB_WRAPPER_ERR_NULL_PARAM` (-1) — A required parameter was NULL
+- `LMDB_WRAPPER_ERR_INVALID_PARAM` (-2) — A parameter had an invalid value
+- `LMDB_WRAPPER_ERR_ENV_CREATE` (-3) — Failed to create LMDB environment
+- `LMDB_WRAPPER_ERR_ENV_OPEN` (-4) — Failed to open LMDB environment
+- `LMDB_WRAPPER_ERR_TXN_BEGIN` (-5) — Failed to begin transaction
+- `LMDB_WRAPPER_ERR_DBI_OPEN` (-6) — Failed to open database handle
+- `LMDB_WRAPPER_ERR_PUT` (-7) — Failed to write record
+- `LMDB_WRAPPER_ERR_GET` (-8) — Failed to read record
+- `LMDB_WRAPPER_ERR_DEL` (-9) — Failed to delete record
+- `LMDB_WRAPPER_ERR_TXN_COMMIT` (-10) — Failed to commit transaction
+- `LMDB_WRAPPER_ERR_NOT_FOUND` (-11) — Record not found
+- `LMDB_WRAPPER_ERR_MAP_FULL` (-12) — Database map is full
+- `LMDB_WRAPPER_ERR_INTERNAL` (-99) — Unexpected internal error
+
+## Usage Example
+
+```c
+#include "lmdb_wrapper.h"
+#include <string.h>
+
+int main(void) {
+    lmdbWrapperEnv_t *env = NULL;
+    lmdbWrapperConfig_t config = {
+        .path = "./my_database",
+        .mapSize = 0,  /* default 10MB */
+        .maxDbs = 0    /* default 1 */
+    };
+
+    lmdbWrapperErr_t err = lmdbWrapperEnvCreate(&env, &config);
+    if (err != LMDB_WRAPPER_SUCCESS) {
+        return 1;
+    }
+
+    const char *key = "block_001";
+    const char *val = "data...";
+    err = lmdbWrapperPut(env, key, strlen(key), val, strlen(val));
+
+    void *readVal = NULL;
+    size_t readSize = 0;
+    err = lmdbWrapperGet(env, key, strlen(key), &readVal, &readSize);
+
+    err = lmdbWrapperDel(env, key, strlen(key));
+
+    lmdbWrapperEnvClose(env);
+    return 0;
+}
+```
+
+## Build
+
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build
+cd build && ctest --output-on-failure
+```
+
+## File Structure
+
+- `include/lmdb_wrapper.h` — Public API header
+- `src/lmdb_wrapper.c` — Implementation
+- `tests/test_lmdb_wrapper.c` — Test suite (CMocka)
+- `examples/basic_usage.c` — Complete usage example
+- `cmake/FetchLMDB.cmake` — Auto-downloads LMDB dependency
+- `docs/` — Architecture and context documentation
+
+## Links
+
+- Source: https://github.com/ddtdanilo/LMDB-wrapper-MISRA-C
+- Full docs: https://github.com/ddtdanilo/LMDB-wrapper-MISRA-C/blob/main/llms-full.txt

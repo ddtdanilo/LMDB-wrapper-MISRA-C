@@ -1,0 +1,53 @@
+This is a MISRA C compliant wrapper for LMDB written in C99.
+
+## Rules
+
+- camelCase for functions/variables/types, UPPER_SNAKE_CASE for macros/constants/enums
+- Prefix public functions with `lmdbWrapper`, error codes with `LMDB_WRAPPER_ERR_`
+- Type names use `_t` suffix (e.g., `lmdbWrapperErr_t`)
+- 3-space indentation, no tabs
+- Every closing `}` gets a comment (e.g., `} /* if result success */`)
+- All code, comments, and documentation in English
+
+## MISRA C (Mandatory)
+
+- Validate ALL input parameters at function start
+- NULL pointer → `LMDB_WRAPPER_ERR_NULL_PARAM`
+- Invalid param → `LMDB_WRAPPER_ERR_INVALID_PARAM`
+- Check ALL return values
+- Single return point per function (use `result` variable + `if/else` chains)
+- No `goto`, no implicit fall-through, no multiple returns
+- All variables initialized at declaration
+- Use `uint32_t`, `int32_t`, `size_t` (not `int`/`long`)
+
+## Pattern
+
+```c
+lmdbWrapperErr_t lmdbWrapperFunc(const param_t *param)
+{
+   lmdbWrapperErr_t result = LMDB_WRAPPER_SUCCESS;
+
+   if (param == NULL) {
+      result = LMDB_WRAPPER_ERR_NULL_PARAM;
+   } /* if null */
+
+   if (result == LMDB_WRAPPER_SUCCESS) {
+      /* do work, check return values */
+   } /* if result success */
+
+   return result;
+} /* lmdbWrapperFunc */
+```
+
+## API
+
+- `lmdbWrapperEnvCreate()` / `lmdbWrapperEnvClose()` — Environment lifecycle
+- `lmdbWrapperPut()` / `lmdbWrapperGet()` / `lmdbWrapperDel()` — CRUD operations
+- `lmdbWrapperStrerror()` — Error code to string
+
+## Build
+
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Debug && cmake --build build
+cd build && ctest --output-on-failure
+```

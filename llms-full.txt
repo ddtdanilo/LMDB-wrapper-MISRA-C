@@ -1,0 +1,321 @@
+# LMDB Wrapper - MISRA C (Full Documentation)
+
+> MISRA C compliant wrapper for LMDB (Lightning Memory-Mapped Database)
+
+This document contains the complete API reference, coding standards, architecture, and implementation details for AI models that need deep context about this library.
+
+---
+
+## 1. Project Overview
+
+This is a C99 library that wraps LMDB with a MISRA C compliant API layer. Every function validates all input parameters, checks all return values, and uses explicit error codes. It is designed for safety-critical systems (automotive, aerospace, embedded) and serves as a base component for blockchain-like block management systems.
+
+### Why This Exists
+
+LMDB is highly efficient but does not comply with MISRA C. This wrapper bridges that gap by adding:
+- Mandatory NULL pointer checks on all parameters
+- Invalid parameter validation (empty strings, zero sizes)
+- Explicit error codes instead of raw LMDB return values
+- Single return point per function
+- No goto statements
+- All variables initialized at declaration
+
+---
+
+## 2. Complete API Reference
+
+### Header: include/lmdb_wrapper.h
+
+#### Error Type
+
+```c
+typedef enum {
+   LMDB_WRAPPER_SUCCESS           =   0,
+   LMDB_WRAPPER_ERR_NULL_PARAM    =  -1,
+   LMDB_WRAPPER_ERR_INVALID_PARAM =  -2,
+   LMDB_WRAPPER_ERR_ENV_CREATE    =  -3,
+   LMDB_WRAPPER_ERR_ENV_OPEN      =  -4,
+   LMDB_WRAPPER_ERR_TXN_BEGIN     =  -5,
+   LMDB_WRAPPER_ERR_DBI_OPEN      =  -6,
+   LMDB_WRAPPER_ERR_PUT           =  -7,
+   LMDB_WRAPPER_ERR_GET           =  -8,
+   LMDB_WRAPPER_ERR_DEL           =  -9,
+   LMDB_WRAPPER_ERR_TXN_COMMIT    = -10,
+   LMDB_WRAPPER_ERR_NOT_FOUND     = -11,
+   LMDB_WRAPPER_ERR_MAP_FULL      = -12,
+   LMDB_WRAPPER_ERR_INTERNAL      = -99
+} lmdbWrapperErr_t;
+```
+
+#### Opaque Environment Handle
+
+```c
+typedef struct lmdbWrapperEnv lmdbWrapperEnv_t;
+```
+
+Users must not access internal fields. The internal struct contains:
+- `MDB_env *mdbEnv` — LMDB environment handle
+- `MDB_dbi mdbDbi` — LMDB database handle
+- `int dbiOpen` — Flag indicating if the database handle is open
+
+#### Configuration
+
+```c
+typedef struct {
+   const char *path;      /* Directory path (must exist) */
+   size_t      mapSize;   /* Max DB size in bytes (0 = 10MB default) */
+   uint32_t    maxDbs;    /* Max named databases (0 = 1 default) */
+} lmdbWrapperConfig_t;
+```
+
+#### Functions
+
+##### lmdbWrapperEnvCreate
+
+```c
+lmdbWrapperErr_t lmdbWrapperEnvCreate(
+   lmdbWrapperEnv_t **envOut,
+   const lmdbWrapperConfig_t *config
+);
+```
+
+Creates and opens an LMDB environment. Allocates memory for the wrapper structure, creates the LMDB environment, configures map size and max databases, opens the environment, and opens the default database.
+
+**Validation**: envOut != NULL, config != NULL, config->path != NULL, config->path not empty.
+
+**On failure**: Cleans up any partially created resources. envOut is not modified.
+
+##### lmdbWrapperEnvClose
+
+```c
+void lmdbWrapperEnvClose(lmdbWrapperEnv_t *env);
+```
+
+Closes the database handle, closes the LMDB environment, and frees the wrapper structure. Safe to call with NULL (no-op). After this call, the env pointer is invalid.
+
+##### lmdbWrapperPut
+
+```c
+lmdbWrapperErr_t lmdbWrapperPut(
+   lmdbWrapperEnv_t *env,
+   const void *key,
+   size_t keySize,
+   const void *val,
+   size_t valSize
+);
+```
+
+Stores a key-value record. If the key already exists, the value is overwritten. Uses a write transaction internally (begin, put, commit).
+
+**Validation**: env != NULL, key != NULL, val != NULL, keySize > 0, valSize > 0, database must be open.
+
+**Special errors**: Returns `LMDB_WRAPPER_ERR_MAP_FULL` if the database map is full.
+
+##### lmdbWrapperGet
+
+```c
+lmdbWrapperErr_t lmdbWrapperGet(
+   lmdbWrapperEnv_t *env,
+   const void *key,
+   size_t keySize,
+   void **valOut,
+   size_t *valSizeOut
+);
+```
+
+Retrieves a value by key using a read-only transaction. The returned pointer (`*valOut`) points to LMDB's memory-mapped data and is valid only until the next write operation.
+
+**Validation**: env != NULL, key != NULL, valOut != NULL, valSizeOut != NULL, keySize > 0.
+
+**Special errors**: Returns `LMDB_WRAPPER_ERR_NOT_FOUND` if the key does not exist.
+
+##### lmdbWrapperDel
+
+```c
+lmdbWrapperErr_t lmdbWrapperDel(
+   lmdbWrapperEnv_t *env,
+   const void *key,
+   size_t keySize
+);
+```
+
+Deletes a record by key using a write transaction.
+
+**Validation**: env != NULL, key != NULL, keySize > 0.
+
+**Special errors**: Returns `LMDB_WRAPPER_ERR_NOT_FOUND` if the key does not exist.
+
+##### lmdbWrapperStrerror
+
+```c
+const char *lmdbWrapperStrerror(lmdbWrapperErr_t err);
+```
+
+Converts an error code to a human-readable static string. Never returns NULL. Returns "Unknown error" for unrecognized codes.
+
+---
+
+## 3. Error Handling Pattern
+
+Every function follows this MISRA C pattern:
+
+```c
+lmdbWrapperErr_t lmdbWrapperExample(const param_t *param)
+{
+   lmdbWrapperErr_t result = LMDB_WRAPPER_SUCCESS;
+
+   /* Validate input parameters (MISRA C) */
+   if (param == NULL) {
+      result = LMDB_WRAPPER_ERR_NULL_PARAM;
+   } else if (param->value < 0) {
+      result = LMDB_WRAPPER_ERR_INVALID_PARAM;
+   } /* if parameter validation */
+
+   /* Perform operation only if validation passed */
+   if (result == LMDB_WRAPPER_SUCCESS) {
+      int rc = mdb_some_function(...);
+      if (rc != 0) {
+         result = LMDB_WRAPPER_ERR_LMDB;
+      } /* if rc */
+   } /* if result success */
+
+   return result;
+} /* lmdbWrapperExample */
+```
+
+Key rules:
+- Single return point (one `return result` at the end)
+- `result` variable initialized to SUCCESS
+- Validation chain using if/else if
+- Operations guarded by `if (result == LMDB_WRAPPER_SUCCESS)`
+- Every closing brace has a comment describing what it closes
+
+---
+
+## 4. Coding Standards
+
+- **Naming**: camelCase for functions/variables/types, UPPER_SNAKE_CASE for macros/constants/enums
+- **Prefix**: All public functions use `lmdbWrapper`, all error codes use `LMDB_WRAPPER_ERR_`
+- **Types**: `_t` suffix (e.g., `lmdbWrapperErr_t`, `lmdbWrapperConfig_t`)
+- **Indentation**: 3 spaces, no tabs
+- **Closing braces**: Every `}` has a comment (e.g., `} /* if result success */`)
+- **Include guards**: `#ifndef` / `#define` / `#endif`
+- **No goto**, no implicit fall-through, no multiple returns
+- **Explicit types**: uint32_t, int32_t, size_t instead of int/long
+
+---
+
+## 5. Architecture
+
+```
+┌─────────────────────────────────┐
+│   Higher-Level System           │
+│   (Blockchain, validation)      │
+├─────────────────────────────────┤
+│   LMDB Wrapper (MISRA C)       │  ◄── This library
+│   - Parameter validation        │
+│   - Robust error handling       │
+│   - Safe and consistent API     │
+├─────────────────────────────────┤
+│   LMDB (original library)      │
+│   - Key-value engine            │
+│   - Memory-mapped I/O           │
+└─────────────────────────────────┘
+```
+
+Data flow:
+1. Caller invokes wrapper function (e.g., `lmdbWrapperPut()`)
+2. Wrapper validates all parameters per MISRA C
+3. If valid, wrapper calls corresponding LMDB function
+4. Wrapper checks LMDB return value
+5. Wrapper returns standardized error code
+
+---
+
+## 6. Build and Test
+
+```bash
+# Configure and build
+cmake -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build
+
+# Run tests
+cd build && ctest --output-on-failure
+```
+
+Dependencies (auto-downloaded by CMake):
+- LMDB — via cmake/FetchLMDB.cmake
+- CMocka — via cmake/FetchCMocka.cmake (test framework)
+
+---
+
+## 7. File Map
+
+| File | Purpose |
+|------|---------|
+| `include/lmdb_wrapper.h` | Public API (types, function declarations, docs) |
+| `src/lmdb_wrapper.c` | Implementation (all MISRA C compliant) |
+| `tests/test_lmdb_wrapper.c` | 26 test cases covering all functions and error paths |
+| `examples/basic_usage.c` | Complete working example with all operations |
+| `cmake/FetchLMDB.cmake` | Downloads LMDB at configure time |
+| `cmake/FetchCMocka.cmake` | Downloads CMocka test framework |
+| `CMakeLists.txt` | Build configuration |
+| `CLAUDE.md` | Development rules and coding standards |
+| `CONTRIBUTING.md` | Contribution guidelines |
+
+---
+
+## 8. Complete Usage Example
+
+```c
+#include "lmdb_wrapper.h"
+#include <stdio.h>
+#include <string.h>
+#include <sys/stat.h>
+
+int main(void) {
+    lmdbWrapperEnv_t *env = NULL;
+    lmdbWrapperErr_t err = LMDB_WRAPPER_SUCCESS;
+    void *valOut = NULL;
+    size_t valSize = 0;
+
+    /* Create database directory */
+    (void)mkdir("./my_database", 0755);
+
+    /* Configure and create environment */
+    lmdbWrapperConfig_t config;
+    config.path = "./my_database";
+    config.mapSize = 1024 * 1024;  /* 1 MB */
+    config.maxDbs = 0;             /* default */
+
+    err = lmdbWrapperEnvCreate(&env, &config);
+    if (err != LMDB_WRAPPER_SUCCESS) {
+        fprintf(stderr, "Create failed: %s\n", lmdbWrapperStrerror(err));
+        return 1;
+    }
+
+    /* Store a record */
+    const char *key = "user:1001";
+    const char *val = "Alice";
+    err = lmdbWrapperPut(env, key, strlen(key), val, strlen(val));
+
+    /* Retrieve a record */
+    err = lmdbWrapperGet(env, key, strlen(key), &valOut, &valSize);
+    if (err == LMDB_WRAPPER_SUCCESS) {
+        printf("Got: %.*s\n", (int)valSize, (const char *)valOut);
+    }
+
+    /* Delete a record */
+    err = lmdbWrapperDel(env, key, strlen(key));
+
+    /* Check for not found */
+    err = lmdbWrapperGet(env, key, strlen(key), &valOut, &valSize);
+    if (err == LMDB_WRAPPER_ERR_NOT_FOUND) {
+        printf("Key deleted successfully\n");
+    }
+
+    /* Cleanup */
+    lmdbWrapperEnvClose(env);
+    return 0;
+}
+```
