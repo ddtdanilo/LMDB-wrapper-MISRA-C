@@ -21,9 +21,15 @@ cmake --build build
 
 # Run tests
 cd build && ctest --output-on-failure
+
+# Run static analysis
+cppcheck --quiet --std=c99 --check-level=exhaustive \
+  --enable=warning,performance,portability \
+  --error-exitcode=1 --inline-suppr --suppress=missingInclude \
+  --suppress=missingIncludeSystem -I include src include tests examples
 ```
 
-All tests must pass before submitting a pull request.
+All tests and static analysis checks must pass before submitting a pull request.
 
 ## Code Style
 
@@ -54,6 +60,7 @@ Every function must comply with MISRA C standards:
 - Every public API function must have at least one test
 - Tests must cover: success path, null parameters, invalid parameters, and error conditions
 - Tests follow the same coding standards as production code
+- Static analysis must pass with `cppcheck`
 
 ## Pull Request Process
 

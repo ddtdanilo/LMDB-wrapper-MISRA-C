@@ -150,13 +150,13 @@ static void testGetNullEnv(void **state)
 {
    (void)state;
    const char *key = "k";
-   void *val = NULL;
+   char val[2] = {0};
    size_t valSize = 0;
-   lmdbWrapperErr_t err = lmdbWrapperGet(NULL, key, 1, &val, &valSize);
+   lmdbWrapperErr_t err = lmdbWrapperGet(NULL, key, 1, val, sizeof(val), &valSize);
    assert_int_equal(err, LMDB_WRAPPER_ERR_NULL_PARAM);
 } /* testGetNullEnv */
 
-static void testGetNullValOut(void **state)
+static void testGetNullValBufWithCapacity(void **state)
 {
    (void)state;
    lmdbWrapperEnv_t *env = NULL;
@@ -164,13 +164,17 @@ static void testGetNullValOut(void **state)
    lmdbWrapperErr_t err = lmdbWrapperEnvCreate(&env, &config);
    assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
 
-   const char *key = "k";
+   const char *key = "key";
+   const char *val = "value";
    size_t valSize = 0;
-   err = lmdbWrapperGet(env, key, 1, NULL, &valSize);
+   err = lmdbWrapperPut(env, key, strlen(key), val, strlen(val));
+   assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
+
+   err = lmdbWrapperGet(env, key, strlen(key), NULL, 1U, &valSize);
    assert_int_equal(err, LMDB_WRAPPER_ERR_NULL_PARAM);
 
    lmdbWrapperEnvClose(env);
-} /* testGetNullValOut */
+} /* testGetNullValBufWithCapacity */
 
 static void testGetNullValSizeOut(void **state)
 {
@@ -181,8 +185,8 @@ static void testGetNullValSizeOut(void **state)
    assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
 
    const char *key = "k";
-   void *val = NULL;
-   err = lmdbWrapperGet(env, key, 1, &val, NULL);
+   char val[2] = {0};
+   err = lmdbWrapperGet(env, key, 1, val, sizeof(val), NULL);
    assert_int_equal(err, LMDB_WRAPPER_ERR_NULL_PARAM);
 
    lmdbWrapperEnvClose(env);
@@ -253,9 +257,9 @@ static void testGetZeroKeySize(void **state)
    assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
 
    const char *key = "k";
-   void *val = NULL;
+   char val[2] = {0};
    size_t valSize = 0;
-   err = lmdbWrapperGet(env, key, 0, &val, &valSize);
+   err = lmdbWrapperGet(env, key, 0, val, sizeof(val), &valSize);
    assert_int_equal(err, LMDB_WRAPPER_ERR_INVALID_PARAM);
 
    lmdbWrapperEnvClose(env);
@@ -316,9 +320,9 @@ static void testOpenExistingDatabase(void **state)
    assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
 
    /* Verify the record persisted */
-   void *readVal = NULL;
+   char readVal[32] = {0};
    size_t readSize = 0;
-   err = lmdbWrapperGet(env2, key, strlen(key), &readVal, &readSize);
+   err = lmdbWrapperGet(env2, key, strlen(key), readVal, sizeof(readVal), &readSize);
    assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
    assert_true(readSize == strlen(val));
    assert_memory_equal(readVal, val, readSize);
@@ -343,9 +347,9 @@ static void testPutAndGetRecord(void **state)
    assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
 
    /* Get the record back */
-   void *readVal = NULL;
+   char readVal[16] = {0};
    size_t readSize = 0;
-   err = lmdbWrapperGet(env, key, strlen(key), &readVal, &readSize);
+   err = lmdbWrapperGet(env, key, strlen(key), readVal, sizeof(readVal), &readSize);
    assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
    assert_true(readSize == strlen(val));
    assert_memory_equal(readVal, val, readSize);
@@ -374,10 +378,10 @@ static void testPutMultipleRecords(void **state)
 
    /* Read them all back */
    for (size_t i = 0; i < count; i++) {
-      void *readVal = NULL;
+      char readVal[16] = {0};
       size_t readSize = 0;
       err = lmdbWrapperGet(env, keys[i], strlen(keys[i]),
-                           &readVal, &readSize);
+                           readVal, sizeof(readVal), &readSize);
       assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
       assert_true(readSize == strlen(vals[i]));
       assert_memory_equal(readVal, vals[i], readSize);
@@ -403,9 +407,9 @@ static void testDeleteRecord(void **state)
    assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
 
    /* Verify it exists */
-   void *readVal = NULL;
+   char readVal[16] = {0};
    size_t readSize = 0;
-   err = lmdbWrapperGet(env, key, strlen(key), &readVal, &readSize);
+   err = lmdbWrapperGet(env, key, strlen(key), readVal, sizeof(readVal), &readSize);
    assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
 
    /* Delete it */
@@ -413,7 +417,7 @@ static void testDeleteRecord(void **state)
    assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
 
    /* Verify it's gone */
-   err = lmdbWrapperGet(env, key, strlen(key), &readVal, &readSize);
+   err = lmdbWrapperGet(env, key, strlen(key), readVal, sizeof(readVal), &readSize);
    assert_int_equal(err, LMDB_WRAPPER_ERR_NOT_FOUND);
 
    lmdbWrapperEnvClose(env);
@@ -442,15 +446,93 @@ static void testUpdateRecord(void **state)
    assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
 
    /* Verify updated value */
-   void *readVal = NULL;
+   char readVal[16] = {0};
    size_t readSize = 0;
-   err = lmdbWrapperGet(env, key, strlen(key), &readVal, &readSize);
+   err = lmdbWrapperGet(env, key, strlen(key), readVal, sizeof(readVal), &readSize);
    assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
    assert_true(readSize == strlen(val2));
    assert_memory_equal(readVal, val2, readSize);
 
    lmdbWrapperEnvClose(env);
 } /* testUpdateRecord */
+
+static void testGetSizeQuery(void **state)
+{
+   (void)state;
+   lmdbWrapperEnv_t *env = NULL;
+   lmdbWrapperConfig_t config = { .path = TEST_DIR, .mapSize = 0, .maxDbs = 0 };
+   lmdbWrapperErr_t err = lmdbWrapperEnvCreate(&env, &config);
+   assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
+
+   const char *key = "queryKey";
+   const char *val = "queryValue";
+   size_t readSize = 0;
+
+   err = lmdbWrapperPut(env, key, strlen(key), val, strlen(val));
+   assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
+
+   err = lmdbWrapperGet(env, key, strlen(key), NULL, 0U, &readSize);
+   assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
+   assert_true(readSize == strlen(val));
+
+   lmdbWrapperEnvClose(env);
+} /* testGetSizeQuery */
+
+static void testGetBufferTooSmall(void **state)
+{
+   (void)state;
+   lmdbWrapperEnv_t *env = NULL;
+   lmdbWrapperConfig_t config = { .path = TEST_DIR, .mapSize = 0, .maxDbs = 0 };
+   lmdbWrapperErr_t err = lmdbWrapperEnvCreate(&env, &config);
+   assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
+
+   const char *key = "smallBufferKey";
+   const char *val = "0123456789";
+   char readVal[4] = {'X', 'X', 'X', 'X'};
+   char expected[4] = {'X', 'X', 'X', 'X'};
+   size_t readSize = 0;
+
+   err = lmdbWrapperPut(env, key, strlen(key), val, strlen(val));
+   assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
+
+   err = lmdbWrapperGet(env, key, strlen(key), readVal, sizeof(readVal), &readSize);
+   assert_int_equal(err, LMDB_WRAPPER_ERR_BUFFER_TOO_SMALL);
+   assert_true(readSize == strlen(val));
+   assert_memory_equal(readVal, expected, sizeof(readVal));
+
+   lmdbWrapperEnvClose(env);
+} /* testGetBufferTooSmall */
+
+static void testGetCopiesDataIntoCallerBuffer(void **state)
+{
+   (void)state;
+   lmdbWrapperEnv_t *env = NULL;
+   lmdbWrapperConfig_t config = { .path = TEST_DIR, .mapSize = 0, .maxDbs = 0 };
+   lmdbWrapperErr_t err = lmdbWrapperEnvCreate(&env, &config);
+   assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
+
+   const char *key = "copyKey";
+   const char *originalVal = "original";
+   const char *updatedVal = "updated";
+   char readVal[16] = {0};
+   size_t readSize = 0;
+
+   err = lmdbWrapperPut(env, key, strlen(key), originalVal, strlen(originalVal));
+   assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
+
+   err = lmdbWrapperGet(env, key, strlen(key), readVal, sizeof(readVal), &readSize);
+   assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
+   assert_true(readSize == strlen(originalVal));
+   assert_memory_equal(readVal, originalVal, readSize);
+
+   err = lmdbWrapperPut(env, key, strlen(key), updatedVal, strlen(updatedVal));
+   assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
+
+   assert_true(readSize == strlen(originalVal));
+   assert_memory_equal(readVal, originalVal, readSize);
+
+   lmdbWrapperEnvClose(env);
+} /* testGetCopiesDataIntoCallerBuffer */
 
 /* ---------- Tests: Not found ---------- */
 
@@ -463,9 +545,9 @@ static void testGetNotFound(void **state)
    assert_int_equal(err, LMDB_WRAPPER_SUCCESS);
 
    const char *key = "nonexistent";
-   void *val = NULL;
+   char val[16] = {0};
    size_t valSize = 0;
-   err = lmdbWrapperGet(env, key, strlen(key), &val, &valSize);
+   err = lmdbWrapperGet(env, key, strlen(key), val, sizeof(val), &valSize);
    assert_int_equal(err, LMDB_WRAPPER_ERR_NOT_FOUND);
 
    lmdbWrapperEnvClose(env);
@@ -537,7 +619,7 @@ int main(void)
       /* Null parameter validation - need setup */
       cmocka_unit_test_setup_teardown(testPutNullKey, testSetup, testTeardown),
       cmocka_unit_test_setup_teardown(testPutNullVal, testSetup, testTeardown),
-      cmocka_unit_test_setup_teardown(testGetNullValOut, testSetup, testTeardown),
+      cmocka_unit_test_setup_teardown(testGetNullValBufWithCapacity, testSetup, testTeardown),
       cmocka_unit_test_setup_teardown(testGetNullValSizeOut, testSetup, testTeardown),
       cmocka_unit_test_setup_teardown(testDelNullKey, testSetup, testTeardown),
 
@@ -554,6 +636,9 @@ int main(void)
       cmocka_unit_test_setup_teardown(testPutMultipleRecords, testSetup, testTeardown),
       cmocka_unit_test_setup_teardown(testDeleteRecord, testSetup, testTeardown),
       cmocka_unit_test_setup_teardown(testUpdateRecord, testSetup, testTeardown),
+      cmocka_unit_test_setup_teardown(testGetSizeQuery, testSetup, testTeardown),
+      cmocka_unit_test_setup_teardown(testGetBufferTooSmall, testSetup, testTeardown),
+      cmocka_unit_test_setup_teardown(testGetCopiesDataIntoCallerBuffer, testSetup, testTeardown),
 
       /* Not found */
       cmocka_unit_test_setup_teardown(testGetNotFound, testSetup, testTeardown),

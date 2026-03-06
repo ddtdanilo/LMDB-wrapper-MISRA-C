@@ -36,6 +36,7 @@ typedef enum {
    LMDB_WRAPPER_ERR_TXN_COMMIT    = -10, /**< Failed to commit transaction */
    LMDB_WRAPPER_ERR_NOT_FOUND     = -11, /**< Record not found */
    LMDB_WRAPPER_ERR_MAP_FULL      = -12, /**< Database map is full */
+   LMDB_WRAPPER_ERR_BUFFER_TOO_SMALL = -13, /**< Output buffer is too small */
    LMDB_WRAPPER_ERR_INTERNAL      = -99  /**< Unexpected internal error */
 } lmdbWrapperErr_t;
 
@@ -51,8 +52,8 @@ typedef struct lmdbWrapperEnv lmdbWrapperEnv_t;
  */
 typedef struct {
    const char *path;      /**< Directory path for the database files (must exist) */
-   size_t      mapSize;   /**< Maximum database size in bytes (0 = use LMDB default) */
-   uint32_t    maxDbs;    /**< Maximum number of named databases (0 = use default of 1) */
+   size_t      mapSize;   /**< Maximum database size in bytes (0 = use wrapper default of 10 MB) */
+   uint32_t    maxDbs;    /**< Maximum number of named databases (0 = use wrapper default of 1) */
 } lmdbWrapperConfig_t;
 
 /**
@@ -104,20 +105,27 @@ lmdbWrapperErr_t lmdbWrapperPut(
  * @param[in]  env         Environment handle.
  * @param[in]  key         Pointer to key data.
  * @param[in]  keySize     Size of the key in bytes.
- * @param[out] valOut      Pointer to receive the value data pointer.
- *                         The pointer is valid only until the next write operation.
- * @param[out] valSizeOut  Pointer to receive the value size.
+ * @param[out] valBuf      Caller-provided buffer that receives a copy of the value.
+ *                         May be NULL only when valCapacity is 0 to query the required size.
+ * @param[in]  valCapacity Capacity of valBuf in bytes.
+ * @param[out] valSizeOut  Pointer to receive the actual value size.
  * @return LMDB_WRAPPER_SUCCESS on success,
+ *         LMDB_WRAPPER_ERR_BUFFER_TOO_SMALL if valBuf is too small,
  *         LMDB_WRAPPER_ERR_NOT_FOUND if key does not exist,
  *         or another error code.
  *
- * MISRA C: Validates all pointer parameters and keySize > 0.
+ * On LMDB_WRAPPER_ERR_BUFFER_TOO_SMALL, valSizeOut receives the required size
+ * and no data is copied into valBuf.
+ *
+ * MISRA C: Validates env != NULL, key != NULL, valSizeOut != NULL, keySize > 0,
+ *          and valBuf != NULL when valCapacity > 0.
  */
 lmdbWrapperErr_t lmdbWrapperGet(
    lmdbWrapperEnv_t *env,
    const void *key,
    size_t keySize,
-   void **valOut,
+   void *valBuf,
+   size_t valCapacity,
    size_t *valSizeOut
 );
 

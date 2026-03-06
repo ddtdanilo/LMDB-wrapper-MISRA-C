@@ -16,6 +16,7 @@ This library provides a safe, validated API layer over LMDB that enforces MISRA 
 - Full MISRA C parameter validation on every function call
 - Specific error codes for null parameters, invalid parameters, and LMDB errors
 - All return values validated (no unchecked calls)
+- Read API copies values into caller-owned buffers
 - Simple API: create environment, put/get/delete records, close
 - Automatic LMDB download via CMake (no manual dependency setup)
 
@@ -26,7 +27,7 @@ This library provides a safe, validated API layer over LMDB that enforces MISRA 
 | `lmdbWrapperEnvCreate()` | Create and open a database environment |
 | `lmdbWrapperEnvClose()` | Close and destroy an environment |
 | `lmdbWrapperPut()` | Store a key-value record |
-| `lmdbWrapperGet()` | Retrieve a value by key |
+| `lmdbWrapperGet()` | Copy a value by key into a caller buffer |
 | `lmdbWrapperDel()` | Delete a record by key |
 | `lmdbWrapperStrerror()` | Convert error code to string |
 
@@ -61,15 +62,20 @@ Or run the test executable directly for verbose output:
 
 ```c
 #include "lmdb_wrapper.h"
+#include <sys/stat.h>
 #include <string.h>
 
 int main(void) {
     lmdbWrapperEnv_t *env = NULL;
     lmdbWrapperConfig_t config = {
         .path = "./my_database",
-        .mapSize = 0,  /* default 10MB */
+        .mapSize = 0,  /* wrapper default 10MB */
         .maxDbs = 0    /* default 1 */
     };
+    char readVal[64] = {0};
+    size_t readSize = 0;
+
+    (void)mkdir("./my_database", 0755);
 
     lmdbWrapperErr_t err = lmdbWrapperEnvCreate(&env, &config);
     if (err != LMDB_WRAPPER_SUCCESS) {
@@ -82,9 +88,8 @@ int main(void) {
     err = lmdbWrapperPut(env, key, strlen(key), val, strlen(val));
 
     /* Read */
-    void *readVal = NULL;
-    size_t readSize = 0;
-    err = lmdbWrapperGet(env, key, strlen(key), &readVal, &readSize);
+    err = lmdbWrapperGet(env, key, strlen(key),
+                         readVal, sizeof(readVal), &readSize);
 
     /* Delete */
     err = lmdbWrapperDel(env, key, strlen(key));
@@ -136,6 +141,7 @@ int main(void) {
 | `LMDB_WRAPPER_ERR_DEL` | Failed to delete record |
 | `LMDB_WRAPPER_ERR_TXN_COMMIT` | Failed to commit transaction |
 | `LMDB_WRAPPER_ERR_MAP_FULL` | Database map is full |
+| `LMDB_WRAPPER_ERR_BUFFER_TOO_SMALL` | Output buffer is too small |
 
 ## Contributing
 

@@ -30,7 +30,7 @@ The public API is declared in `include/lmdb_wrapper.h`. All functions use the `l
 - `lmdbWrapperEnvCreate(lmdbWrapperEnv_t **envOut, const lmdbWrapperConfig_t *config)` — Create and open a database environment
 - `lmdbWrapperEnvClose(lmdbWrapperEnv_t *env)` — Close and destroy an environment
 - `lmdbWrapperPut(lmdbWrapperEnv_t *env, const void *key, size_t keySize, const void *val, size_t valSize)` — Store a key-value record
-- `lmdbWrapperGet(lmdbWrapperEnv_t *env, const void *key, size_t keySize, void **valOut, size_t *valSizeOut)` — Retrieve a value by key
+- `lmdbWrapperGet(lmdbWrapperEnv_t *env, const void *key, size_t keySize, void *valBuf, size_t valCapacity, size_t *valSizeOut)` — Copy a value by key into a caller buffer
 - `lmdbWrapperDel(lmdbWrapperEnv_t *env, const void *key, size_t keySize)` — Delete a record by key
 - `lmdbWrapperStrerror(lmdbWrapperErr_t err)` — Convert error code to human-readable string
 
@@ -49,6 +49,7 @@ The public API is declared in `include/lmdb_wrapper.h`. All functions use the `l
 - `LMDB_WRAPPER_ERR_TXN_COMMIT` (-10) — Failed to commit transaction
 - `LMDB_WRAPPER_ERR_NOT_FOUND` (-11) — Record not found
 - `LMDB_WRAPPER_ERR_MAP_FULL` (-12) — Database map is full
+- `LMDB_WRAPPER_ERR_BUFFER_TOO_SMALL` (-13) — Output buffer is too small
 - `LMDB_WRAPPER_ERR_INTERNAL` (-99) — Unexpected internal error
 
 ## Usage Example
@@ -74,9 +75,10 @@ int main(void) {
     const char *val = "data...";
     err = lmdbWrapperPut(env, key, strlen(key), val, strlen(val));
 
-    void *readVal = NULL;
+    char readVal[64] = {0};
     size_t readSize = 0;
-    err = lmdbWrapperGet(env, key, strlen(key), &readVal, &readSize);
+    err = lmdbWrapperGet(env, key, strlen(key),
+                         readVal, sizeof(readVal), &readSize);
 
     err = lmdbWrapperDel(env, key, strlen(key));
 

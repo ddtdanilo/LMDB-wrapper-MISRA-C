@@ -9,6 +9,29 @@ on:
   workflow_call:
 
 jobs:
+  static-analysis:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cppcheck
+        run: sudo apt-get update && sudo apt-get install -y cppcheck
+
+      - name: Run cppcheck
+        run: |
+          cppcheck \
+            --quiet \
+            --std=c99 \
+            --check-level=exhaustive \
+            --enable=warning,performance,portability \
+            --error-exitcode=1 \
+            --inline-suppr \
+            --suppress=missingInclude \
+            --suppress=missingIncludeSystem \
+            -I include \
+            src include tests examples
+
   build:
     strategy:
       fail-fast: false
@@ -22,6 +45,8 @@ jobs:
             cc: clang
 
     runs-on: ${{ matrix.os }}
+
+    needs: static-analysis
 
     steps:
       - uses: actions/checkout@v4

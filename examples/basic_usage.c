@@ -35,7 +35,7 @@ int main(void)
 {
    lmdbWrapperEnv_t *env = NULL;
    lmdbWrapperErr_t err = LMDB_WRAPPER_SUCCESS;
-   void *valOut = NULL;
+   char valOut[64] = {0};
    size_t valSize = 0U;
 
    /* Create database directory */
@@ -88,17 +88,17 @@ int main(void)
 
    err = lmdbWrapperGet(env,
                         key1, strlen(key1),
-                        &valOut, &valSize);
+                        valOut, sizeof(valOut), &valSize);
    check(err, "get user:1001");
    (void)printf("       -> value: \"%.*s\" (size: %zu)\n",
-                (int)valSize, (const char *)valOut, valSize);
+                (int)valSize, valOut, valSize);
 
    err = lmdbWrapperGet(env,
                         key2, strlen(key2),
-                        &valOut, &valSize);
+                        valOut, sizeof(valOut), &valSize);
    check(err, "get user:1002");
    (void)printf("       -> value: \"%.*s\" (size: %zu)\n",
-                (int)valSize, (const char *)valOut, valSize);
+                (int)valSize, valOut, valSize);
 
    /* --------------------------------------------------------
     * 4. Update a record (overwrite)
@@ -113,10 +113,10 @@ int main(void)
 
    err = lmdbWrapperGet(env,
                         key1, strlen(key1),
-                        &valOut, &valSize);
+                        valOut, sizeof(valOut), &valSize);
    check(err, "get user:1001 (updated)");
    (void)printf("       -> value: \"%.*s\"\n",
-                (int)valSize, (const char *)valOut);
+                (int)valSize, valOut);
 
    /* --------------------------------------------------------
     * 5. Delete a record
@@ -129,7 +129,7 @@ int main(void)
    /* Verify it's gone */
    err = lmdbWrapperGet(env,
                         key3, strlen(key3),
-                        &valOut, &valSize);
+                        valOut, sizeof(valOut), &valSize);
    if (err == LMDB_WRAPPER_ERR_NOT_FOUND) {
       (void)printf("  OK: user:1003 confirmed deleted (NOT_FOUND)\n");
    } else {
@@ -148,7 +148,7 @@ int main(void)
    const char *missingKey = "user:9999";
    err = lmdbWrapperGet(env,
                         missingKey, strlen(missingKey),
-                        &valOut, &valSize);
+                        valOut, sizeof(valOut), &valSize);
    (void)printf("  get non-existent key -> %s (code: %d)\n",
                 lmdbWrapperStrerror(err), (int)err);
 
@@ -171,17 +171,17 @@ int main(void)
 
    err = lmdbWrapperGet(env,
                         key1, strlen(key1),
-                        &valOut, &valSize);
+                        valOut, sizeof(valOut), &valSize);
    check(err, "get user:1001 after reopen");
    (void)printf("       -> value: \"%.*s\" (persisted!)\n",
-                (int)valSize, (const char *)valOut);
+                (int)valSize, valOut);
 
    err = lmdbWrapperGet(env,
                         key2, strlen(key2),
-                        &valOut, &valSize);
+                        valOut, sizeof(valOut), &valSize);
    check(err, "get user:1002 after reopen");
    (void)printf("       -> value: \"%.*s\" (persisted!)\n",
-                (int)valSize, (const char *)valOut);
+                (int)valSize, valOut);
 
    /* --------------------------------------------------------
     * Cleanup

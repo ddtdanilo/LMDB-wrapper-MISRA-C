@@ -239,7 +239,8 @@ lmdbWrapperErr_t lmdbWrapperGet(
    lmdbWrapperEnv_t *env,
    const void *key,
    size_t keySize,
-   void **valOut,
+   void *valBuf,
+   size_t valCapacity,
    size_t *valSizeOut)
 {
    lmdbWrapperErr_t result = LMDB_WRAPPER_SUCCESS;
@@ -253,19 +254,18 @@ lmdbWrapperErr_t lmdbWrapperGet(
       result = LMDB_WRAPPER_ERR_NULL_PARAM;
    } else if (key == NULL) {
       result = LMDB_WRAPPER_ERR_NULL_PARAM;
-   } else if (valOut == NULL) {
-      result = LMDB_WRAPPER_ERR_NULL_PARAM;
    } else if (valSizeOut == NULL) {
       result = LMDB_WRAPPER_ERR_NULL_PARAM;
    } else if (keySize == 0U) {
       result = LMDB_WRAPPER_ERR_INVALID_PARAM;
+   } else if ((valBuf == NULL) && (valCapacity > 0U)) {
+      result = LMDB_WRAPPER_ERR_NULL_PARAM;
    } else if (env->dbiOpen == 0) {
       result = LMDB_WRAPPER_ERR_INTERNAL;
    } /* if parameter validation */
 
    /* Initialize outputs */
    if (result == LMDB_WRAPPER_SUCCESS) {
-      *valOut = NULL;
       *valSizeOut = 0U;
    } /* if result success */
 
@@ -294,8 +294,15 @@ lmdbWrapperErr_t lmdbWrapperGet(
 
    /* Copy results */
    if (result == LMDB_WRAPPER_SUCCESS) {
-      *valOut = mdbVal.mv_data;
       *valSizeOut = mdbVal.mv_size;
+
+      if (valCapacity > 0U) {
+         if (valCapacity < mdbVal.mv_size) {
+            result = LMDB_WRAPPER_ERR_BUFFER_TOO_SMALL;
+         } else {
+            (void)memcpy(valBuf, mdbVal.mv_data, mdbVal.mv_size);
+         } /* if buffer too small */
+      } /* if copy requested */
    } /* if result success */
 
    /* Abort read-only transaction */
@@ -406,6 +413,9 @@ const char *lmdbWrapperStrerror(lmdbWrapperErr_t err)
          break;
       case LMDB_WRAPPER_ERR_MAP_FULL:
          msg = "Database map is full";
+         break;
+      case LMDB_WRAPPER_ERR_BUFFER_TOO_SMALL:
+         msg = "Output buffer is too small";
          break;
       case LMDB_WRAPPER_ERR_INTERNAL:
          msg = "Internal error";

@@ -118,16 +118,17 @@ lmdbWrapperErr_t lmdbWrapperGet(
    lmdbWrapperEnv_t *env,
    const void *key,
    size_t keySize,
-   void **valOut,
+   void *valBuf,
+   size_t valCapacity,
    size_t *valSizeOut
 );
 ```
 
-Retrieves a value by key using a read-only transaction. The returned pointer (`*valOut`) points to LMDB's memory-mapped data and is valid only until the next write operation.
+Retrieves a value by key using a read-only transaction and copies the LMDB value into a caller-provided buffer.
 
-**Validation**: env != NULL, key != NULL, valOut != NULL, valSizeOut != NULL, keySize > 0.
+**Validation**: env != NULL, key != NULL, valSizeOut != NULL, keySize > 0, and valBuf != NULL when valCapacity > 0.
 
-**Special errors**: Returns `LMDB_WRAPPER_ERR_NOT_FOUND` if the key does not exist.
+**Special errors**: Returns `LMDB_WRAPPER_ERR_NOT_FOUND` if the key does not exist, and `LMDB_WRAPPER_ERR_BUFFER_TOO_SMALL` when `valBuf` cannot hold the value. In that case `valSizeOut` receives the required size and no data is copied.
 
 ##### lmdbWrapperDel
 
@@ -276,7 +277,7 @@ Dependencies (auto-downloaded by CMake):
 int main(void) {
     lmdbWrapperEnv_t *env = NULL;
     lmdbWrapperErr_t err = LMDB_WRAPPER_SUCCESS;
-    void *valOut = NULL;
+    char valOut[64] = {0};
     size_t valSize = 0;
 
     /* Create database directory */
@@ -300,16 +301,18 @@ int main(void) {
     err = lmdbWrapperPut(env, key, strlen(key), val, strlen(val));
 
     /* Retrieve a record */
-    err = lmdbWrapperGet(env, key, strlen(key), &valOut, &valSize);
+    err = lmdbWrapperGet(env, key, strlen(key),
+                         valOut, sizeof(valOut), &valSize);
     if (err == LMDB_WRAPPER_SUCCESS) {
-        printf("Got: %.*s\n", (int)valSize, (const char *)valOut);
+        printf("Got: %.*s\n", (int)valSize, valOut);
     }
 
     /* Delete a record */
     err = lmdbWrapperDel(env, key, strlen(key));
 
     /* Check for not found */
-    err = lmdbWrapperGet(env, key, strlen(key), &valOut, &valSize);
+    err = lmdbWrapperGet(env, key, strlen(key),
+                         valOut, sizeof(valOut), &valSize);
     if (err == LMDB_WRAPPER_ERR_NOT_FOUND) {
         printf("Key deleted successfully\n");
     }
