@@ -14,17 +14,21 @@ option(LMDB_WRAPPER_BUILD_TESTS "Build tests" ON)
 option(LMDB_WRAPPER_BUILD_EXAMPLES "Build examples" ON)
 
 # Strict compiler warnings (MISRA C aligned)
-add_compile_options(
-    -Wall
-    -Wextra
-    -Wpedantic
-    -Werror
-    -Wshadow
-    -Wconversion
-    -Wstrict-prototypes
-    -Wmissing-prototypes
-    -Wno-unused-parameter
-)
+if(MSVC)
+    add_compile_options(/W4 /WX)
+else()
+    add_compile_options(
+        -Wall
+        -Wextra
+        -Wpedantic
+        -Werror
+        -Wshadow
+        -Wconversion
+        -Wstrict-prototypes
+        -Wmissing-prototypes
+        -Wno-unused-parameter
+    )
+endif()
 
 # --- LMDB dependency ---
 # Try find_package first (vcpkg / system), then raw paths, then FetchContent
