@@ -31,6 +31,17 @@ This library provides a safe, validated API layer over LMDB that enforces MISRA 
 | `lmdbWrapperDel()` | Delete a record by key |
 | `lmdbWrapperStrerror()` | Convert error code to string |
 
+## Use Cases
+
+LMDB is an ultra-fast embedded key-value database with memory-mapped I/O. This MISRA C wrapper adds the safety layer required for critical environments:
+
+- **Blockchain & cryptocurrency** — Monero uses LMDB for its entire blockchain storage. The zero-copy reads and lock-free concurrent readers make it ideal for distributed ledger systems.
+- **Safety-critical embedded systems** — Automotive (AUTOSAR), medical devices (IEC 62304), and industrial controllers (IEC 61508) that need persistent key-value storage with MISRA C guarantees.
+- **IoT & firmware** — Persistent configuration, structured logs, and state management on resource-constrained devices. LMDB's minimal footprint (~30KB) is well-suited for embedded targets.
+- **Infrastructure & servers** — OpenLDAP (LMDB's origin), Postfix mail maps, and session/cache storage in server applications.
+- **AI/ML pipelines** — Caffe and Caffe2 use LMDB to store image datasets for deep learning training, leveraging zero-copy reads for high throughput.
+- **Desktop & mobile apps** — Local key-value cache as a lightweight alternative to SQLite when relational queries are not needed.
+
 ## Quick Start
 
 ### Prerequisites

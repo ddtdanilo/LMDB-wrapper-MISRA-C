@@ -14,11 +14,30 @@ Develop a **wrapper** in C over LMDB that:
 2. Complies with **MISRA C** standards regarding parameter validation, error handling, and return values.
 3. Serves as a base component for a higher-level system that manages **creation, reading, and validation of blocks** with a blockchain-like architecture.
 
-## Use Case
+## Use Cases
+
+### Primary
 
 - **Persistent storage**: LMDB acts as the persistent memory storage engine for records and blocks.
 - **Blockchain simulation**: The higher-level system consumes this wrapper to manage block chains, branch validation, and CRUD operations on blocks.
 - **Server component**: This wrapper is a base module that is eventually integrated as a component within a server and consumed by higher-level systems.
+
+### Real-World LMDB Applications
+
+LMDB is used in production by major projects:
+
+- **Monero** — stores its entire blockchain (blocks, transactions, outputs) in LMDB.
+- **OpenLDAP** — LMDB was originally created as the backend storage engine for OpenLDAP.
+- **Postfix** — uses LMDB for mail alias maps and configuration lookup tables.
+- **Caffe / Caffe2** — stores image datasets in LMDB for high-throughput deep learning training.
+
+### Target Environments for This Wrapper
+
+- **Automotive** (AUTOSAR, ISO 26262) — functional safety requirements demand MISRA C compliance.
+- **Medical devices** (IEC 62304) — regulatory compliance requires validated, traceable code.
+- **Industrial control** (IEC 61508) — safety instrumented systems require defensive programming.
+- **Aerospace** (DO-178C) — airborne software requires strict coding standards.
+- **IoT / firmware** — resource-constrained devices benefit from LMDB's ~30KB footprint and this wrapper's safety guarantees.
 
 ## MISRA C Standard
 

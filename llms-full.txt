@@ -22,7 +22,38 @@ LMDB is highly efficient but does not comply with MISRA C. This wrapper bridges 
 
 ---
 
-## 2. Complete API Reference
+## 2. Use Cases
+
+LMDB is an ultra-fast embedded key-value database with memory-mapped I/O, ACID transactions, and lock-free concurrent readers. This wrapper adds the MISRA C safety layer required for regulated environments.
+
+### Real-World LMDB Users
+
+- **Monero** — stores its entire blockchain (blocks, transactions, outputs) in LMDB
+- **OpenLDAP** — LMDB was originally created as the backend storage engine for OpenLDAP
+- **Postfix** — uses LMDB for mail alias maps and configuration lookup tables
+- **Caffe / Caffe2** — stores image datasets in LMDB for high-throughput deep learning training
+
+### Target Environments for This Wrapper
+
+| Domain | Standard | Why MISRA C Matters |
+|--------|----------|---------------------|
+| Automotive | AUTOSAR, ISO 26262 | Software in vehicles must meet functional safety requirements |
+| Medical devices | IEC 62304 | Regulatory compliance demands validated, traceable code |
+| Industrial control | IEC 61508 | Safety instrumented systems require defensive programming |
+| Aerospace | DO-178C | Airborne software requires strict coding standards |
+| IoT / firmware | — | Resource-constrained devices benefit from LMDB's ~30KB footprint and this wrapper's safety guarantees |
+
+### Common Use Patterns
+
+- **Persistent key-value storage** in embedded or server applications
+- **Blockchain / distributed ledger** block and transaction storage
+- **Configuration and state management** on constrained devices
+- **Session and cache storage** as a lightweight SQLite alternative (when relational queries are not needed)
+- **Write-ahead journals** and message queue buffers in distributed systems
+
+---
+
+## 3. Complete API Reference
 
 ### Header: include/lmdb_wrapper.h
 
@@ -156,7 +187,7 @@ Converts an error code to a human-readable static string. Never returns NULL. Re
 
 ---
 
-## 3. Error Handling Pattern
+## 4. Error Handling Pattern
 
 Every function follows this MISRA C pattern:
 
@@ -193,7 +224,7 @@ Key rules:
 
 ---
 
-## 4. Coding Standards
+## 5. Coding Standards
 
 - **Naming**: camelCase for functions/variables/types, UPPER_SNAKE_CASE for macros/constants/enums
 - **Prefix**: All public functions use `lmdbWrapper`, all error codes use `LMDB_WRAPPER_ERR_`
@@ -206,7 +237,7 @@ Key rules:
 
 ---
 
-## 5. Architecture
+## 6. Architecture
 
 ```
 ┌─────────────────────────────────┐
@@ -233,7 +264,7 @@ Data flow:
 
 ---
 
-## 6. Build and Test
+## 7. Build and Test
 
 ```bash
 # Configure and build
@@ -250,7 +281,7 @@ Dependencies (auto-downloaded by CMake):
 
 ---
 
-## 7. File Map
+## 8. File Map
 
 | File | Purpose |
 |------|---------|
@@ -266,7 +297,7 @@ Dependencies (auto-downloaded by CMake):
 
 ---
 
-## 8. Complete Usage Example
+## 9. Complete Usage Example
 
 ```c
 #include "lmdb_wrapper.h"

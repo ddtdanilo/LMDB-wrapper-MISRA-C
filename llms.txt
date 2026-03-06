@@ -52,6 +52,17 @@ The public API is declared in `include/lmdb_wrapper.h`. All functions use the `l
 - `LMDB_WRAPPER_ERR_BUFFER_TOO_SMALL` (-13) — Output buffer is too small
 - `LMDB_WRAPPER_ERR_INTERNAL` (-99) — Unexpected internal error
 
+## Use Cases
+
+- Blockchain and cryptocurrency (e.g. Monero stores its blockchain in LMDB)
+- Safety-critical embedded systems: automotive (AUTOSAR), medical (IEC 62304), industrial (IEC 61508)
+- IoT and firmware: persistent config, structured logs, state on constrained devices
+- Infrastructure: OpenLDAP, Postfix, session/cache storage
+- AI/ML pipelines: Caffe/Caffe2 use LMDB for image dataset storage
+- Desktop/mobile apps: lightweight key-value cache alternative to SQLite
+
+This MISRA C wrapper adds the mandatory safety layer (parameter validation, explicit error codes, single return point) required in regulated and safety-critical environments.
+
 ## Usage Example
 
 ```c
