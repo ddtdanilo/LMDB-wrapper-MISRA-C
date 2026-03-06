@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 project(lmdb_wrapper
-    VERSION 1.0.0
+    VERSION 1.0.1
     LANGUAGES C
     DESCRIPTION "MISRA C compliant wrapper for LMDB"
 )
