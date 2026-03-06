@@ -1,0 +1,9 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+find_dependency(lmdb)
+
+include("${CMAKE_CURRENT_LIST_DIR}/lmdb_wrapper-targets.cmake")
+
+check_required_components(lmdb_wrapper)
