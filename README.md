@@ -3,6 +3,7 @@
 [![CI](https://github.com/ddtdanilo/LMDB-wrapper-MISRA-C/actions/workflows/ci.yml/badge.svg)](https://github.com/ddtdanilo/LMDB-wrapper-MISRA-C/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Release](https://img.shields.io/github/v/release/ddtdanilo/LMDB-wrapper-MISRA-C)](https://github.com/ddtdanilo/LMDB-wrapper-MISRA-C/releases)
+[![vcpkg](https://img.shields.io/badge/vcpkg-ddtdanilo--lmdb--wrapper-blue)](https://github.com/microsoft/vcpkg/tree/master/ports/ddtdanilo-lmdb-wrapper)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-yellow?logo=buy-me-a-coffee)](https://buymeacoffee.com/ddtdanilo)
 
 A MISRA C compliant wrapper for [LMDB](https://github.com/LMDB/lmdb) (Lightning Memory-Mapped Database).
@@ -42,22 +43,39 @@ LMDB is an ultra-fast embedded key-value database with memory-mapped I/O. This M
 - **AI/ML pipelines** — Caffe and Caffe2 use LMDB to store image datasets for deep learning training, leveraging zero-copy reads for high throughput.
 - **Desktop & mobile apps** — Local key-value cache as a lightweight alternative to SQLite when relational queries are not needed.
 
-## Quick Start
+## Installation
 
-### Prerequisites
+### vcpkg (recommended)
+
+This library is available as an official [vcpkg](https://github.com/microsoft/vcpkg) port:
+
+```bash
+vcpkg install ddtdanilo-lmdb-wrapper
+```
+
+Then in your `CMakeLists.txt`:
+
+```cmake
+find_package(lmdb_wrapper CONFIG REQUIRED)
+target_link_libraries(your_target PRIVATE lmdb_wrapper::lmdb_wrapper)
+```
+
+### Build from source
+
+#### Prerequisites
 
 - C compiler (GCC or Clang)
 - CMake >= 3.14
 - Git (for LMDB download)
 
-### Build
+#### Build
 
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build
 ```
 
-### Run Tests
+#### Run Tests
 
 ```bash
 cd build && ctest --output-on-failure
@@ -131,6 +149,9 @@ int main(void) {
 │   └── lmdb_wrapper.c
 ├── tests/             # Tests
 │   └── test_lmdb_wrapper.c
+├── vcpkg-port/        # vcpkg port files (reference copy)
+│   ├── portfile.cmake
+│   └── vcpkg.json
 └── todo/              # Task tracking
     └── plan.md
 ```

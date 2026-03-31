@@ -1,10 +1,10 @@
 {
-    "name": "lmdb-wrapper",
+    "name": "ddtdanilo-lmdb-wrapper",
     "version": "1.0.1",
     "description": "MISRA C compliant wrapper for LMDB (Lightning Memory-Mapped Database)",
     "homepage": "https://github.com/ddtdanilo/LMDB-wrapper-MISRA-C",
     "license": "MIT",
-    "supports": "!uwp",
+    "supports": "!uwp & !x86",
     "dependencies": [
         "lmdb",
         {

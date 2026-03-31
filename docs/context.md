@@ -50,6 +50,17 @@ MISRA C is a code safety standard for C widely used in the automotive, aerospace
 - **No use of unsafe functions** (malloc without validation, etc.).
 - **Explicit control flow** (no fall-through in switch, no goto).
 
+## Distribution
+
+This library is available as an official port in Microsoft's [vcpkg](https://github.com/microsoft/vcpkg) package manager under the name `ddtdanilo-lmdb-wrapper`.
+
+- **vcpkg PR**: [microsoft/vcpkg#50323](https://github.com/microsoft/vcpkg/pull/50323) (merged)
+- **Port name**: `ddtdanilo-lmdb-wrapper`
+- **Install command**: `vcpkg install ddtdanilo-lmdb-wrapper`
+- **Platforms**: All platforms supported by vcpkg except UWP and x86
+
+A reference copy of the port files is kept in `vcpkg-port/` for development convenience. The authoritative version lives in the vcpkg registry.
+
 ## Technology Stack
 
 | Component      | Technology             |

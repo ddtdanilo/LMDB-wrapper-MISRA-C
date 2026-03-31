@@ -71,6 +71,15 @@ Every function must comply with MISRA C standards:
 5. Write a clear commit message using conventional commit style (`feat:`, `fix:`, `test:`, `docs:`, `chore:`)
 6. Open a pull request against `main`
 
+## Releasing a New Version
+
+This library is distributed via [vcpkg](https://github.com/microsoft/vcpkg) as `ddtdanilo-lmdb-wrapper`. When releasing a new version:
+
+1. Update the version in `CMakeLists.txt`
+2. Tag the release (`git tag v<version>`) and push the tag
+3. Update `vcpkg-port/vcpkg.json` with the new version
+4. Submit a PR to [microsoft/vcpkg](https://github.com/microsoft/vcpkg) updating the port files and version database
+
 ## Reporting Issues
 
 When reporting a bug, please include:

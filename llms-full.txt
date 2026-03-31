@@ -264,7 +264,24 @@ Data flow:
 
 ---
 
-## 7. Build and Test
+## 7. Installation and Build
+
+### vcpkg (recommended)
+
+This library is available as an official [vcpkg](https://github.com/microsoft/vcpkg) port:
+
+```bash
+vcpkg install ddtdanilo-lmdb-wrapper
+```
+
+CMake integration:
+
+```cmake
+find_package(lmdb_wrapper CONFIG REQUIRED)
+target_link_libraries(your_target PRIVATE lmdb_wrapper::lmdb_wrapper)
+```
+
+### Build from source
 
 ```bash
 # Configure and build
@@ -275,7 +292,7 @@ cmake --build build
 cd build && ctest --output-on-failure
 ```
 
-Dependencies (auto-downloaded by CMake):
+Dependencies (auto-downloaded by CMake when building from source):
 - LMDB — via cmake/FetchLMDB.cmake
 - CMocka — via cmake/FetchCMocka.cmake (test framework)
 
@@ -292,6 +309,7 @@ Dependencies (auto-downloaded by CMake):
 | `cmake/FetchLMDB.cmake` | Downloads LMDB at configure time |
 | `cmake/FetchCMocka.cmake` | Downloads CMocka test framework |
 | `CMakeLists.txt` | Build configuration |
+| `vcpkg-port/` | Reference copy of vcpkg port files (`ddtdanilo-lmdb-wrapper`) |
 | `CLAUDE.md` | Development rules and coding standards |
 | `CONTRIBUTING.md` | Contribution guidelines |
 

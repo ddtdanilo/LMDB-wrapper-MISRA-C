@@ -2,7 +2,7 @@ vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO ddtdanilo/LMDB-wrapper-MISRA-C
     REF "v${VERSION}"
-    SHA512 0  # Update with actual SHA512 after release
+    SHA512 97ef5907023623b4342cdd48dfc931d964bb04a23991ad1ef9689c2f16f1e3a84a0b0316da0911a128bf16fd9ac34d8cab02b487f19fea34e53125464cfba189
     HEAD_REF main
 )
 

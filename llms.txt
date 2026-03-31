@@ -14,6 +14,7 @@ A C99 library that provides a safe, validated API layer over LMDB enforcing MISR
 - Dependencies: LMDB (auto-downloaded by CMake)
 - Testing: CMocka framework
 - MISRA C compliant: full parameter validation, explicit error codes, single return point per function
+- Available via [vcpkg](https://github.com/microsoft/vcpkg): `vcpkg install ddtdanilo-lmdb-wrapper`
 
 ## API
 
@@ -98,7 +99,22 @@ int main(void) {
 }
 ```
 
-## Build
+## Installation
+
+### vcpkg (recommended)
+
+```bash
+vcpkg install ddtdanilo-lmdb-wrapper
+```
+
+CMake integration:
+
+```cmake
+find_package(lmdb_wrapper CONFIG REQUIRED)
+target_link_libraries(your_target PRIVATE lmdb_wrapper::lmdb_wrapper)
+```
+
+### Build from source
 
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Debug
@@ -113,6 +129,7 @@ cd build && ctest --output-on-failure
 - `tests/test_lmdb_wrapper.c` — Test suite (CMocka)
 - `examples/basic_usage.c` — Complete usage example
 - `cmake/FetchLMDB.cmake` — Auto-downloads LMDB dependency
+- `vcpkg-port/` — Reference copy of vcpkg port files (`ddtdanilo-lmdb-wrapper`)
 - `docs/` — Architecture and context documentation
 
 ## Links
