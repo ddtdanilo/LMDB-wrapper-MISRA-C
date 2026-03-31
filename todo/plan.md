@@ -60,15 +60,51 @@
 
 ## Phase 7: vcpkg Distribution
 
-- [x] Create vcpkg port files (portfile.cmake, vcpkg.json)
-- [x] Submit PR to microsoft/vcpkg (microsoft/vcpkg#50323)
-- [x] Port merged as `ddtdanilo-lmdb-wrapper`
-- [x] Sync repo documentation with vcpkg availability
+### Background
+
+[vcpkg](https://github.com/microsoft/vcpkg) is Microsoft's C/C++ package manager, used by thousands of projects worldwide. Getting a port accepted into vcpkg makes the library installable with a single command (`vcpkg install <name>`) and integrates seamlessly with CMake via `find_package`.
+
+### Repositories involved
+
+| Repository | Purpose |
+|---|---|
+| [ddtdanilo/LMDB-wrapper-MISRA-C](https://github.com/ddtdanilo/LMDB-wrapper-MISRA-C) | This project — the MISRA C wrapper source code |
+| [microsoft/vcpkg](https://github.com/microsoft/vcpkg) | The official vcpkg registry where the port was merged |
+| [ddtdanilo/vcpkg](https://github.com/ddtdanilo/vcpkg) | Personal fork of vcpkg used to submit the PR |
+
+### Timeline
+
+1. **v1.0.0** — Initial port submitted as `lmdb-wrapper`
+2. **Reviewer feedback** — [JavierMatosD](https://github.com/JavierMatosD) (Microsoft) requested renaming the port to `ddtdanilo-lmdb-wrapper` to avoid naming conflicts with the upstream LMDB project
+3. **v1.0.1** — Redesigned `lmdbWrapperGet` API (caller-owned buffers instead of internal pointers), added `LMDB_WRAPPER_ERR_BUFFER_TOO_SMALL`, added cppcheck to CI
+4. **Port approved** — [vicroms](https://github.com/vicroms) (Microsoft, vcpkg team member) approved the PR
+5. **Merged** — PR merged into microsoft/vcpkg master
+
+### PR and links
+
+- **PR**: [microsoft/vcpkg#50323](https://github.com/microsoft/vcpkg/pull/50323) — "[ddtdanilo-lmdb-wrapper] Add new port"
+- **Port files in vcpkg**: [ports/ddtdanilo-lmdb-wrapper](https://github.com/microsoft/vcpkg/tree/master/ports/ddtdanilo-lmdb-wrapper)
+- **Version entry**: [versions/d-/ddtdanilo-lmdb-wrapper.json](https://github.com/microsoft/vcpkg/blob/master/versions/d-/ddtdanilo-lmdb-wrapper.json)
+
+### Tasks
+
+- [x] Fork microsoft/vcpkg to [ddtdanilo/vcpkg](https://github.com/ddtdanilo/vcpkg)
+- [x] Create port files (portfile.cmake, vcpkg.json)
+- [x] Submit PR [microsoft/vcpkg#50323](https://github.com/microsoft/vcpkg/pull/50323)
+- [x] Address reviewer feedback (rename port to `ddtdanilo-lmdb-wrapper`)
+- [x] Update port to v1.0.1 after API redesign
+- [x] PR approved by vcpkg team member [vicroms](https://github.com/vicroms)
+- [x] PR merged into microsoft/vcpkg
+- [x] Sync this repo's documentation with vcpkg availability
 
 ## Phase 8: Next Release
 
 - [ ] Rename GitHub repo (coordinate with vcpkg port update)
   - Current name: `LMDB-wrapper-MISRA-C`
-  - Cannot rename without breaking the vcpkg port (SHA512 changes with repo name)
+  - Cannot rename without breaking the vcpkg port — the SHA512 in the [portfile](https://github.com/microsoft/vcpkg/blob/master/ports/ddtdanilo-lmdb-wrapper/portfile.cmake) is computed from the release tarball, and the tarball's internal directory name includes the repo name. A rename changes the tarball content and invalidates the hash.
   - Must be done together with a new version release (e.g. v1.0.2 or v1.1.0)
-  - Steps: rename repo, tag new release, compute new SHA512, submit PR to microsoft/vcpkg updating REPO and SHA512
+  - Steps:
+    1. Rename repo on GitHub (old URL will redirect, but tarball changes)
+    2. Tag new release (`git tag v<new-version>`)
+    3. Compute new SHA512 from the release tarball
+    4. Submit PR to [microsoft/vcpkg](https://github.com/microsoft/vcpkg) updating `REPO`, `SHA512`, and version in the port files
