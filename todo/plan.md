@@ -57,3 +57,18 @@
 - [x] Add CI/CD with GitHub Actions
 - [x] Update README.md with badges and correct API names
 - [x] Set GitHub repository metadata
+
+## Phase 7: vcpkg Distribution
+
+- [x] Create vcpkg port files (portfile.cmake, vcpkg.json)
+- [x] Submit PR to microsoft/vcpkg (microsoft/vcpkg#50323)
+- [x] Port merged as `ddtdanilo-lmdb-wrapper`
+- [x] Sync repo documentation with vcpkg availability
+
+## Phase 8: Next Release
+
+- [ ] Rename GitHub repo (coordinate with vcpkg port update)
+  - Current name: `LMDB-wrapper-MISRA-C`
+  - Cannot rename without breaking the vcpkg port (SHA512 changes with repo name)
+  - Must be done together with a new version release (e.g. v1.0.2 or v1.1.0)
+  - Steps: rename repo, tag new release, compute new SHA512, submit PR to microsoft/vcpkg updating REPO and SHA512
